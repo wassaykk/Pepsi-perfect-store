@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pepsi Beverage Management System — Admin/Customer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --primary-blue:#0066CC; --secondary-blue:#004C97; --success:#28a745; --warning:#ffc107; --danger:#dc3545;
+      --bg:#f0f2f5; --card:#fff; --muted:#666;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Segoe UI,system-ui,Arial,sans-serif}
+    body{background:var(--bg);color:#222}
+    .container{display:flex;min-height:100vh}
+    /* Login */
+    .login-container{width:100%;height:100vh;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,var(--primary-blue),var(--secondary-blue));}
+    .login-form{width:420px;background:var(--card);padding:20px;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+    .login-form h2{text-align:center;color:var(--primary-blue);margin-bottom:14px}
+    .user-type-selector{display:flex;margin-bottom:10px;border-radius:8px;overflow:hidden;border:1px solid #eee}
+    .user-type{flex:1;padding:8px;text-align:center;background:#f7f7f7;cursor:pointer}
+    .user-type.active{background:var(--primary-blue);color:#fff}
+    .form-group{margin:10px 0}
+    input[type="text"],input[type="password"],input[type="number"],select,textarea{width:100%;padding:10px;border-radius:6px;border:1px solid #ddd}
+    .btn{display:inline-block;padding:10px 14px;border-radius:6px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--primary-blue);color:#fff}
+    .link{color:var(--primary-blue);cursor:pointer}
+    .small{font-size:13px;color:#666;margin-top:8px}
+    /* App */
+    .sidebar{width:240px;background:linear-gradient(180deg,var(--primary-blue),var(--secondary-blue));color:#fff;position:fixed;left:0;top:0;bottom:0;padding-bottom:20px;overflow:auto}
+    .logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center}
+    .logo h2{font-size:18px;display:flex;align-items:center;gap:10px;justify-content:center}
+    .nav-menu{padding-top:10px}
+    .nav-item{padding:12px 18px;display:flex;gap:12px;align-items:center;cursor:pointer}
+    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,.06)}
+    .main-content{margin-left:240px;padding:18px;flex:1}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+    .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px}
+    .stat-value{font-size:20px;font-weight:700;color:var(--primary-blue);margin-top:8px}
+    .charts-container{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .table-container{overflow-x:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+    .product-card{background:var(--card);padding:12px;border-radius:10px;text-align:center;cursor:pointer;border:1px solid #f0f0f0}
+    .product-image{width:80px;height:80px;object-fit:contain;margin-bottom:8px}
+    .cart{background:var(--card);padding:12px;border-radius:10px}
+    .cart-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee}
+    .actions{display:flex;gap:6px}
+    .btn-sm{padding:6px 8px;border-radius:6px;font-size:13px}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-success{background:var(--success);color:#fff}
+    footer{margin-top:18px;text-align:center;color:#666;font-size:13px}
+    .badge{display:inline-block;padding:4px 8px;border-radius:8px;font-size:12px}
+    .badge-pending{background:#fff3cd;color:#856404}
+    .badge-approved{background:#d4edda;color:#155724}
+    .badge-cancel{background:#f8d7da;color:#721c24}
+    .flex-row{display:flex;gap:8px;align-items:center}
+    @media (max-width:900px){.charts-container{grid-template-columns:1fr}.main-content{padding:12px}.sidebar{width:70px}.main-content{margin-left:70px}}
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-form card">
+      <h2><i class="fas fa-cocktail"></i> Pepsi Beverage System</h2>
+
+      <div class="user-type-selector" id="userTypeSelector">
+        <div class="user-type active" data-type="admin">Admin</div>
+        <div class="user-type" data-type="customer">Customer</div>
+      </div>
+
+      <div class="form-group">
+        <label>Username</label>
+        <input id="username" type="text" placeholder="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="password">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button id="loginBtn" class="btn btn-primary" style="flex:1">Login</button>
+        <button id="openRegisterBtn" class="btn" style="flex:1">Register (customer)</button>
+      </div>
+
+      <div class="small" style="margin-top:10px">Demo admin: <b>admin / admin</b> — Admin creates customers.</div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="mainApp" style="display:none" class="container">
+    <aside class="sidebar">
+      <div class="logo">
+        <h2><i class="fas fa-bottle-water"></i> <span>Pepsi System</span></h2>
+      </div>
+      <nav class="nav-menu" id="navMenu">
+        <!-- Admin menu will be shown/hidden depending on role -->
+        <div class="nav-item active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i><span class="nav-label">Dashboard</span></div>
+        <div class="nav-item" data-page="products"><i class="fas fa-boxes-stacked"></i><span class="nav-label">Products</span></div>
+        <div class="nav-item" data-page="customers"><i class="fas fa-users"></i><span class="nav-label">Customers</span></div>
+        <div class="nav-item" data-page="orders"><i class="fas fa-shopping-cart"></i><span class="nav-label">Orders</span></div>
+        <div class="nav-item" data-page="messages"><i class="fas fa-envelope"></i><span class="nav-label">Messages</span></div>
+        <div class="nav-item" data-page="reports"><i class="fas fa-chart-bar"></i><span class="nav-label">Reports</span></div>
+
+        <!-- Customer-only menu -->
+        <div class="nav-item" data-page="shop"><i class="fas fa-store"></i><span class="nav-label">Shop</span></div>
+        <div class="nav-item" data-page="myorders"><i class="fas fa-list"></i><span class="nav-label">My Orders</span></div>
+        <div class="nav-item" data-page="mymessages"><i class="fas fa-envelope-open-text"></i><span class="nav-label">Messages</span></div>
+
+        <div class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span class="nav-label">Logout</span></div>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div class="header">
+        <div>
+          <h3 id="pageTitle">Dashboard</h3>
+          <div id="subTitle" style="color:#666;font-size:13px">Welcome</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--primary-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700" id="avatar">A</div>
+            <div style="text-align:right">
+              <div id="accountName">Admin User</div>
+              <small id="accountType" style="color:#666">Administrator</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN DASHBOARD -->
+      <section id="dashboardPage" class="page-content">
+        <div class="dashboard">
+          <div class="card">
+            <div><strong>Pending Orders</strong></div>
+            <div class="stat-value" id="statPending">0</div>
+            <div class="small">Orders awaiting admin action</div>
+          </div>
+          <div class="card">
+            <div><strong>Total Orders</strong></div>
+            <div class="stat-value" id="statOrders">0</div>
+            <div class="small">All orders in system</div>
+          </div>
+          <div class="card">
+            <div><strong>Total Customers</strong></div>
+            <div class="stat-value" id="statCustomers">0</div>
+            <div class="small">Customers created</div>
+          </div>
+          <div class="card">
+            <div><strong>Low Stock</strong></div>
+            <div class="stat-value" id="statLowStock">0</div>
+            <div class="small">Products with qty ≤ 5</div>
+          </div>
+        </div>
+
+        <div class="charts-container">
+          <div class="card">
+            <h4>Sales Overview</h4>
+            <canvas id="salesChart" style="height:220px"></canvas>
+          </div>
+          <div class="card">
+            <h4>Top Products</h4>
+            <canvas id="topProductsChart" style="height:220px"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCTS (Admin) -->
+      <section id="productsPage" class="page-content" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4>Products</h4>
+            <div>
+              <button id="addProductBtn" class="btn btn-primary">Add Product</button>
+            </div>
+          </div>
+          <div id="productsList" style="margin-top:10px"></div>
+        </div>
+
+        <div id="productFormCard" class="card" style="display:none">
+          <h4 id="productFormTitle">Add Product</h4>
+          <div class="form-row" style="margin-top:8px">
+            <input id="prodName" placeholder="Product name">
+            <input id="prodPrice" placeholder="Price" type="number" step="0.01">
+            <input id="prodQty" placeholder="Quantity" type="number">
+            <input id="prodImg" placeholder="Image URL (optional)">
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="saveProductBtn" class="btn btn-primary">Save</button>
+            <button id="cancelProductBtn" class="btn">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- CUSTOMERS (Admin) -->
+      <section id="customersPage" class="page-content" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4>Customers</h4>
+            <button id="openCreateCustomerBtn" class="btn btn-primary">Create Customer</button>
+          </div>
+          <div id="customerList" style="margin-top:10px"></div>
+        </div>
+
+        <div id="customerFormCard" class="card" style="display:none">
+          <h4 id="customerFormTitle">Create Customer</h4>
+          <div class="form-row" style="margin-top:8px">
+            <input id="custUser" placeholder="username (unique)">
+            <input id="custPass" placeholder="password" type="password">
+            <input id="custName" placeholder="Full name">
+            <input id="custPhone" placeholder="Phone">
+            <input id="custAddress" placeholder="Address">
+            <input id="custEmail" placeholder="Email">
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="saveCustomerBtn" class="btn btn-primary">Save</button>
+            <button id="cancelCustomerBtn" class="btn">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ORDERS (Admin) -->
+      <section id="ordersPage" class="page-content" style="display:none">
+        <div class="card table-container">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <h4>Orders</h4>
+            <button id="refreshOrdersBtn" class="btn">Refresh</button>
+          </div>
+          <table>
+            <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Items</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="ordersTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- MESSAGES (Admin) -->
+      <section id="messagesPage" class="page-content" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <h4>Send Message to Customer</h4>
+          <div class="form-row" style="margin-top:8px">
+            <select id="msgCustomerSelect"></select>
+            <input id="msgSubject" placeholder="Subject">
+          </div>
+          <div style="margin-top:8px">
+            <textarea id="msgBody" placeholder="Message body" style="width:100%;min-height:100px;padding:10px;border-radius:6px;border:1px solid #ddd"></textarea>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="sendMsgBtn" class="btn btn-primary">Send Message</button>
+            <button id="clearMsgsBtn" class="btn">Clear Messages</button>
+          </div>
+        </div>
+
+        <div class="card table-container">
+          <h4>All Messages Sent (latest first)</h4>
+          <table>
+            <thead><tr><th>To</th><th>Subject</th><th>Body</th><th>Date</th></tr></thead>
+            <tbody id="allMessagesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REPORTS (Admin) -->
+      <section id="reportsPage" class="page-content" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <h4>Reports</h4>
+          <div class="small">Sales and top-products (admin only)</div>
+        </div>
+
+        <div class="charts-container">
+          <div class="card">
+            <h4>Sales by Date</h4>
+            <canvas id="salesByDateChart" style="height:220px"></canvas>
+          </div>
+          <div class="card">
+            <h4>Top Selling Products</h4>
+            <canvas id="topSellingChart" style="height:220px"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- SHOP (Customer) -->
+      <section id="shopPage" class="page-content" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <h4>Shop</h4>
+          <div id="productsGrid" class="products-grid" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card">
+          <h4>Quick Cart</h4>
+          <div id="cartItems" style="min-height:60px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <div><strong>Total:</strong></div>
+            <div id="cartTotal">$0.00</div>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <input id="orderNote" placeholder="Order note (optional)" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px">
+            <button id="checkoutBtn" class="btn btn-success">Place Order</button>
+          </div>
+          <div class="small" style="margin-top:8px">Orders placed are sent to Admin for approval.</div>
+        </div>
+      </section>
+
+      <!-- MY ORDERS (Customer) -->
+      <section id="myordersPage" class="page-content" style="display:none">
+        <div class="card table-container">
+          <h4>My Orders</h4>
+          <table>
+            <thead><tr><th>ID</th><th>Date</th><th>Items</th><th>Amount</th><th>Status</th><th>Admin Message</th></tr></thead>
+            <tbody id="myOrdersTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- MY MESSAGES (Customer) -->
+      <section id="mymessagesPage" class="page-content" style="display:none">
+        <div class="card table-container">
+          <h4>Messages from Admin</h4>
+          <table>
+            <thead><tr><th>From</th><th>Subject</th><th>Message</th><th>Date</th></tr></thead>
+            <tbody id="myMessagesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settingsPage" class="page-content" style="display:none">
+        <div class="card">
+          <h4>Settings</h4>
+          <div style="margin-top:8px">
+            <button id="resetDataBtn" class="btn btn-danger">Reset All Demo Data (clear localStorage)</button>
+            <div class="small" style="margin-top:8px">Use carefully.</div>
+          </div>
+        </div>
+      </section>
+
+      <footer>Pepsi Beverage Management System — Demo</footer>
+    </main>
+  </div>
+
+<script>
+/* -------------------------
+   Local data model & init
+   ------------------------- */
+const LS_KEYS = {
+  USERS:'pbs_users_v2',
+  PRODUCTS:'pbs_products_v2',
+  CUSTOMERS:'pbs_customers_v2',
+  ORDERS:'pbs_orders_v2',
+  MESSAGES:'pbs_messages_v2',
+  SESSION:'pbs_session_v2'
+};
+
+const sampleProducts = [
+  {id: 'P001', name:'Pepsi 330ml (Can)', price:35.00, qty:50, img:'https://i.imgur.com/5qH1R8D.png'},
+  {id: 'P002', name:'Diet Pepsi 330ml', price:36.00, qty:30, img:'https://i.imgur.com/5qH1R8D.png'},
+  {id: 'P003', name:'7Up 330ml', price:34.00, qty:25, img:'https://i.imgur.com/8pMZ0mB.png'},
+  {id: 'P004', name:'Mirinda 330ml', price:34.00, qty:18, img:'https://i.imgur.com/8pMZ0mB.png'},
+  {id: 'P005', name:'Mountain Dew 330ml', price:38.00, qty:12, img:'https://i.imgur.com/AqgF6Kq.png'},
+];
+
+const sampleCustomers = [
+  // customers as account entries will be in USERS with type 'customer'
+];
+
+function load(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){return fallback;}
+}
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+function ensureInitialData(){
+  if(!load(LS_KEYS.USERS, null)){
+    const users = [
+      {username:'admin', password:'admin', type:'admin', name:'Admin User', id:'UADMIN'},
+      {username:'customer', password:'cust', type:'customer', name:'Demo Customer', id:'UC001', phone:'03210000002', address:'Demo', email:'cust@example.com'}
+    ];
+    save(LS_KEYS.USERS, users);
+  }
+  if(!load(LS_KEYS.PRODUCTS, null)){
+    save(LS_KEYS.PRODUCTS, sampleProducts);
+  }
+  if(!load(LS_KEYS.CUSTOMERS, null)){
+    // customers list is derived from USERS of type 'customer' but keep a separate customer profile store for easy fields:
+    save(LS_KEYS.CUSTOMERS, []);
+  }
+  if(!load(LS_KEYS.ORDERS, null)){
+    save(LS_KEYS.ORDERS, []);
+  }
+  if(!load(LS_KEYS.MESSAGES, null)){
+    save(LS_KEYS.MESSAGES, []);
+  }
+}
+ensureInitialData();
+
+/* -------------------------
+   Utilities
+   ------------------------- */
+function q(sel, root=document) { return root.querySelector(sel); }
+function qa(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+function uid(prefix='ID'){ return prefix + Math.random().toString(36).slice(2,9).toUpperCase(); }
+function formatMoney(n){ return '$' + Number(n).toFixed(2); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+/* -------------------------
+   Session / Auth
+   ------------------------- */
+function setSession(user){ save(LS_KEYS.SESSION, user); }
+function getSession(){ return load(LS_KEYS.SESSION, null); }
+function clearSession(){ localStorage.removeItem(LS_KEYS.SESSION); }
+
+/* -------------------------
+   UI helpers & role gating
+   ------------------------- */
+const allPages = ['dashboard','products','customers','orders','messages','reports','shop','myorders','mymessages','settings'];
+function showPage(page){
+  // hide all pages
+  allPages.forEach(p => {
+    const el = q(`#${p}Page`);
+    if(el) el.style.display = 'none';
+  });
+  // show requested
+  const el = q(`#${page}Page`);
+  if(el) el.style.display = '';
+  // nav active
+  qa('#navMenu .nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  q('#pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
+}
+
+/* -------------------------
+   Login/Register
+   ------------------------- */
+let selectedType = 'admin';
+qa('#userTypeSelector .user-type').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    qa('#userTypeSelector .user-type').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    selectedType = el.dataset.type;
+  });
+});
+
+q('#loginBtn').addEventListener('click', ()=>{
+  const username = q('#username').value.trim();
+  const password = q('#password').value.trim();
+  if(!username || !password){ alert('Enter username & password'); return; }
+  const users = load(LS_KEYS.USERS, []);
+  const user = users.find(u => u.username===username && u.password===password && u.type===selectedType);
+  if(!user){ alert('Invalid credentials or user-type.'); return; }
+  setSession(user);
+  enterApp();
+});
+
+// Registration for customers (if you want to allow public registration).
+// But per your request admin creates customers; we provide a register option too (but saved as customer)
+q('#openRegisterBtn').addEventListener('click', ()=>{
+  selectedType = 'customer';
+  const username = prompt('Choose username (no spaces):');
+  if(!username) return;
+  const password = prompt('Choose password:');
+  if(!password) return;
+  const name = prompt('Full name:') || username;
+  const phone = prompt('Phone (optional):') || '';
+  const email = prompt('Email (optional):') || '';
+  const users = load(LS_KEYS.USERS, []);
+  if(users.find(u=>u.username===username)){ alert('Username exists'); return; }
+  const id = uid('UC');
+  users.push({username, password, type:'customer', name, id, phone, address:'', email});
+  save(LS_KEYS.USERS, users);
+  alert('Registered. You can now login as customer.');
+});
+
+/* -------------------------
+   Enter ap
+   ------------------------- */
+function enterApp(){
+  const session = getSession();
+  if(!session) return;
+  q('#loginScreen').style.display = 'none';
+  q('#mainApp').style.display = 'flex';
+  q('#accountName').textContent = session.name || session.username;
+  q('#accountType').textContent = (session.type || '').charAt(0).toUpperCase() + (session.type || '').slice(1);
+  q('#avatar').textContent = (session.name || session.username).charAt(0).toUpperCase();
+  applyRoleUI(session.type || 'customer');
+  initApp();
+}
+
+function applyRoleUI(type){
+  // hide/show nav items by role
+  // Admin sees admin pages; customer sees shop/myorders/mymessages.
+  qa('#navMenu .nav-item').forEach(item=>{
+    const page = item.dataset.page;
+    if(!page) return;
+    // default hide all first
+    item.style.display = 'none';
+    // map permissions
+    const adminPages = ['dashboard','products','customers','orders','messages','reports','settings'];
+    const customerPages = ['shop','myorders','mymessages'];
+    if(type === 'admin' && adminPages.includes(page)) item.style.display = '';
+    if(type === 'customer' && customerPages.includes(page)) item.style.display = '';
+    // logout always visible
+    if(item.id === 'logoutBtn') item.style.display = '';
+  });
+
+  // default landing page
+  if(type === 'admin') showPage('dashboard');
+  else showPage('shop');
+}
+
+/* nav click */
+qa('#navMenu .nav-item').forEach(item=>{
+  item.addEventListener('click', (e)=>{
+    const page = item.dataset.page;
+    if(page) showPage(page);
+  });
+});
+q('#logoutBtn').addEventListener('click', ()=>{
+  if(!confirm('Logout?')) return;
+  clearSession();
+  location.reload();
+});
+
+/* -------------------------
+   Data CRUD & render
+   ------------------------- */
+function getUsers(){ return load(LS_KEYS.USERS, []); }
+function getProducts(){ return load(LS_KEYS.PRODUCTS, []); }
+function getCustomers(){ 
+  // customer profiles: combine USERS with type customer and separate customer store
+  const users = getUsers().filter(u => u.type === 'customer');
+  return users.map(u => ({ id: u.id || u.username, username:u.username, name:u.name, phone:u.phone||'', address:u.address||'', email:u.email||'' }));
+}
+function getOrders(){ return load(LS_KEYS.ORDERS, []); }
+function getMessages(){ return load(LS_KEYS.MESSAGES, []); }
+
+function saveUsers(u){ save(LS_KEYS.USERS, u); }
+function saveProducts(p){ save(LS_KEYS.PRODUCTS, p); }
+function saveOrders(o){ save(LS_KEYS.ORDERS, o); }
+function saveMessages(m){ save(LS_KEYS.MESSAGES, m); }
+
+/* -------------------------
+   Product management (Admin) - render + CRUD
+   ------------------------- */
+function renderProductsList(){
+  const list = getProducts();
+  const container = q('#productsList');
+  container.innerHTML = '';
+  if(list.length===0){ container.innerHTML = '<div class="small">No products</div>'; return; }
+  const table = document.createElement('table');
+  table.innerHTML = `<thead><tr><th>SKU</th><th>Name</th><th>Price</th><th>Qty</th><th>Action</th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  list.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.id}</td><td>${p.name}</td><td>${formatMoney(p.price)}</td><td>${p.qty}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-sm" data-edit="${p.id}">Edit</button>
+          <button class="btn btn-sm btn-danger" data-del="${p.id}">Delete</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  container.appendChild(table);
+
+  // actions
+  qa('[data-edit]', table).forEach(btn=>{
+    btn.addEventListener('click', ()=> openProductForm(btn.dataset.edit));
+  });
+  qa('[data-del]', table).forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!confirm('Delete product?')) return;
+      const id = btn.dataset.del;
+      const arr = getProducts().filter(x=>x.id!==id);
+      saveProducts(arr);
+      renderProductsList(); renderProductsGrid(); updateDashboard(); updateCharts();
+    });
+  });
+}
+
+let editingProductId = null;
+q('#addProductBtn').addEventListener('click', ()=> openProductForm());
+function openProductForm(id=null){
+  editingProductId = id;
+  if(id){
+    const p = getProducts().find(x=>x.id===id);
+    if(!p) return;
+    q('#productFormTitle').textContent = 'Edit Product';
+    q('#prodName').value = p.name;
+    q('#prodPrice').value = p.price;
+    q('#prodQty').value = p.qty;
+    q('#prodImg').value = p.img || '';
+  } else {
+    q('#productFormTitle').textContent = 'Add Product';
+    q('#prodName').value=''; q('#prodPrice').value=''; q('#prodQty').value=''; q('#prodImg').value='';
+  }
+  q('#productFormCard').style.display = '';
+  scrollToElement('#productFormCard');
+}
+q('#cancelProductBtn').addEventListener('click', ()=> { q('#productFormCard').style.display='none'; editingProductId=null; });
+q('#saveProductBtn').addEventListener('click', ()=>{
+  const name = q('#prodName').value.trim(); const price = parseFloat(q('#prodPrice').value)||0; const qty = parseInt(q('#prodQty').value)||0; const img = q('#prodImg').value.trim();
+  if(!name){ alert('Name required'); return; }
+  const products = getProducts();
+  if(editingProductId){
+    const idx = products.findIndex(x=>x.id===editingProductId);
+    if(idx>=0){ products[idx].name = name; products[idx].price = price; products[idx].qty = qty; products[idx].img = img; }
+  } else {
+    const newId = 'P' + String((Date.now()%100000)).padStart(3,'0');
+    products.push({id:newId,name,price,qty,img});
+  }
+  saveProducts(products);
+  q('#productFormCard').style.display='none';
+  editingProductId = null;
+  renderProductsList(); renderProductsGrid(); updateDashboard(); updateCharts();
+});
+
+/* PRODUCTS GRID (Shop) */
+function renderProductsGrid(){
+  const grid = q('#productsGrid');
+  const list = getProducts();
+  grid.innerHTML = '';
+  list.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `<img class="product-image" src="${p.img||'https://via.placeholder.com/80'}" alt="">
+      <div style="font-weight:600">${p.name}</div>
+      <div style="color:#666">${formatMoney(p.price)}</div>
+      <div style="color:#999;font-size:12px">Stock: ${p.qty}</div>`;
+    card.addEventListener('click', ()=> addToCart(p.id));
+    grid.appendChild(card);
+  });
+}
+
+/* -------------------------
+   Customers (Admin) - create & list
+   ------------------------- */
+q('#openCreateCustomerBtn').addEventListener('click', ()=> {
+  q('#customerFormTitle').textContent = 'Create Customer';
+  q('#custUser').value=''; q('#custPass').value=''; q('#custName').value=''; q('#custPhone').value=''; q('#custAddress').value=''; q('#custEmail').value='';
+  q('#customerFormCard').style.display = '';
+  scrollToElement('#customerFormCard');
+});
+q('#cancelCustomerBtn').addEventListener('click', ()=> q('#customerFormCard').style.display='none');
+
+q('#saveCustomerBtn').addEventListener('click', ()=>{
+  const username = q('#custUser').value.trim();
+  const password = q('#custPass').value.trim();
+  const name = q('#custName').value.trim();
+  const phone = q('#custPhone').value.trim();
+  const addr = q('#custAddress').value.trim();
+  const email = q('#custEmail').value.trim();
+  if(!username || !password || !name){ alert('Username, password and name required'); return; }
+  const users = getUsers();
+  if(users.find(u=>u.username===username)){ alert('Username exists'); return; }
+  const id = uid('UC');
+  users.push({username, password, type:'customer', name, id, phone, address:addr, email});
+  saveUsers(users);
+  q('#customerFormCard').style.display = 'none';
+  renderCustomerList(); populateMsgCustomerSelect(); updateDashboard();
+  alert('Customer created: ' + username + ' (password: ' + password + ')');
+});
+
+function renderCustomerList(){
+  const list = getCustomers();
+  const container = q('#customerList'); container.innerHTML='';
+  if(list.length===0){ container.innerHTML='<div class="small">No customers</div>'; return; }
+  const table = document.createElement('table');
+  table.innerHTML = `<thead><tr><th>Username</th><th>Name</th><th>Phone</th><th>Email</th><th>Action</th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  list.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.username}</td><td>${c.name}</td><td>${c.phone||''}</td><td>${c.email||''}</td>
+      <td><div class="actions"><button class="btn btn-sm" data-view="${c.username}">View</button><button class="btn btn-sm btn-danger" data-del="${c.username}">Delete</button></div></td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody); container.appendChild(table);
+
+  qa('[data-view]', table).forEach(b => b.addEventListener('click', ()=> {
+    const uname = b.dataset.view;
+    const u = getUsers().find(x => x.username === uname);
+    alert(`User: ${u.username}\nName: ${u.name}\nPhone: ${u.phone||''}\nEmail: ${u.email||''}\nID: ${u.id}`);
+  }));
+  qa('[data-del]', table).forEach(b => b.addEventListener('click', ()=> {
+    if(!confirm('Delete customer and their orders/messages?')) return;
+    const uname = b.dataset.del;
+    let users = getUsers().filter(x => !(x.username === uname && x.type === 'customer'));
+    saveUsers(users);
+    // remove orders & messages for this customer's id (if exists)
+    const uidRef = b.dataset.del;
+    const orders = getOrders().filter(o => o.customerUsername !== uname);
+    saveOrders(orders);
+    const messages = getMessages().filter(m => m.toUsername !== uname);
+    saveMessages(messages);
+    renderCustomerList(); renderOrders(); populateMsgCustomerSelect(); updateDashboard(); updateCharts();
+  }));
+}
+
+/* -------------------------
+   Messages (Admin) - send + view + clear
+   ------------------------- */
+function populateMsgCustomerSelect(){
+  const sel = q('#msgCustomerSelect'); sel.innerHTML = '';
+  const customers = getUsers().filter(u => u.type === 'customer');
+  customers.forEach(c => { const o = document.createElement('option'); o.value = c.username; o.textContent = `${c.name} (${c.username})`; sel.appendChild(o); });
+}
+q('#sendMsgBtn').addEventListener('click', ()=>{
+  const toUsername = q('#msgCustomerSelect').value;
+  const subject = q('#msgSubject').value.trim();
+  const body = q('#msgBody').value.trim();
+  if(!toUsername || !subject || !body){ alert('Select customer and fill subject + message'); return; }
+  const messages = getMessages();
+  messages.unshift({ id: uid('MSG'), toUsername, subject, body, date: new Date().toISOString() });
+  saveMessages(messages);
+  renderAllMessages();
+  q('#msgSubject').value=''; q('#msgBody').value='';
+  alert('Message sent');
+});
+q('#clearMsgsBtn').addEventListener('click', ()=>{
+  if(!confirm('Clear all messages?')) return;
+  saveMessages([]); renderAllMessages();
+});
+function renderAllMessages(){
+  const tbody = q('#allMessagesTbody'); tbody.innerHTML = '';
+  const messages = getMessages();
+  messages.forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.toUsername}</td><td>${m.subject}</td><td>${m.body}</td><td>${new Date(m.date).toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* -------------------------
+   Orders (Admin) - view + approve/cancel
+   ------------------------- */
+function renderOrders(){
+  const tbody = q('#ordersTbody'); tbody.innerHTML = '';
+  const orders = getOrders();
+  orders.forEach(o=>{
+    const tr = document.createElement('tr');
+    const statusBadge = o.status === 'Pending' ? `<span class="badge badge-pending">Pending</span>`
+                      : o.status === 'Approved' ? `<span class="badge badge-approved">Approved</span>`
+                      : `<span class="badge badge-cancel">Cancelled</span>`;
+    tr.innerHTML = `<td>${o.id}</td><td>${o.customerName} (${o.customerUsername})</td><td>${new Date(o.date).toLocaleString()}</td>
+      <td style="max-width:300px">${o.items.map(it=> `${it.name}×${it.qty}`).join(', ')}</td>
+      <td>${formatMoney(o.amount)}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <div class="actions">
+          ${o.status === 'Pending' ? `<button class="btn btn-sm" data-app="${o.id}">Approve</button><button class="btn btn-sm btn-danger" data-can="${o.id}">Cancel</button>` : ''}
+          <button class="btn btn-sm" data-view="${o.id}">View</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  qa('[data-view]').forEach(b => b.addEventListener('click', ()=> {
+    const id = b.dataset.view; const o = getOrders().find(x=>x.id===id);
+    alert('Order ' + id + '\\nCustomer: ' + o.customerName + '\\nAmount: ' + formatMoney(o.amount) + '\\nItems:\\n' + o.items.map(i=> `${i.name} x ${i.qty}`).join('\\n') + '\\nStatus: ' + o.status);
+  }));
+  qa('[data-app]').forEach(b => b.addEventListener('click', ()=> {
+    const id = b.dataset.app;
+    if(!confirm('Approve this order? Approving will reduce product stock.')) return;
+    approveOrder(id);
+  }));
+  qa('[data-can]').forEach(b => b.addEventListener('click', ()=> {
+    const id = b.dataset.can;
+    const reason = prompt('Optional message to customer explaining cancellation (optional):');
+    cancelOrder(id, reason||'Order cancelled by admin');
+  }));
+}
+
+function approveOrder(orderId){
+  const orders = getOrders();
+  const idx = orders.findIndex(o => o.id === orderId);
+  if(idx < 0) return alert('Order not found');
+  const order = orders[idx];
+  if(order.status !== 'Pending') return alert('Order not pending');
+  // check stock
+  const products = getProducts();
+  for(const it of order.items){
+    const p = products.find(x=>x.id === it.id);
+    if(!p || p.qty < it.qty){ return alert('Insufficient stock for product: ' + it.name); }
+  }
+  // reduce stock
+  for(const it of order.items){
+    const p = products.find(x=>x.id === it.id);
+    p.qty -= it.qty;
+  }
+  order.status = 'Approved';
+  saveOrders(orders); saveProducts(products);
+  // auto-send message to customer about approval
+  const messages = getMessages();
+  messages.unshift({ id:uid('MSG'), toUsername: order.customerUsername, subject:'Order Approved: ' + order.id, body:`Your order ${order.id} has been approved.`, date:new Date().toISOString() });
+  saveMessages(messages);
+  renderOrders(); renderProductsList(); renderProductsGrid(); updateDashboard(); updateCharts(); renderMyOrders();
+  alert('Order approved and stock updated');
+}
+
+function cancelOrder(orderId, adminMessage='Order cancelled by admin'){
+  const orders = getOrders();
+  const idx = orders.findIndex(o => o.id === orderId);
+  if(idx < 0) return alert('Order not found');
+  const order = orders[idx];
+  if(order.status !== 'Pending') {
+    // If already approved, we could optionally restore stock — skipped for simplicity
+  }
+  order.status = 'Cancelled';
+  saveOrders(orders);
+  // send message
+  const messages = getMessages();
+  messages.unshift({ id:uid('MSG'), toUsername: order.customerUsername, subject:'Order Cancelled: ' + order.id, body: adminMessage, date:new Date().toISOString() });
+  saveMessages(messages);
+  renderOrders(); updateDashboard(); renderMyOrders(); renderAllMessages();
+  alert('Order cancelled and customer notified');
+}
+
+/* -------------------------
+   Cart & Checkout (Customer)
+   ------------------------- */
+let cart = [];
+function addToCart(productId){
+  const prod = getProducts().find(p=>p.id===productId);
+  if(!prod) return alert('Product not available');
+  if(prod.qty <= 0) return alert('Out of stock');
+  const cartItem = cart.find(c=>c.id===productId);
+  if(cartItem){
+    if(cartItem.qty + 1 > prod.qty) return alert('Not enough stock');
+    cartItem.qty++;
+  } else {
+    cart.push({ id:prod.id, name:prod.name, price:prod.price, qty:1 });
+  }
+  renderCart();
+}
+function renderCart(){
+  const el = q('#cartItems'); el.innerHTML='';
+  let total = 0;
+  cart.forEach(ci=>{
+    const row = document.createElement('div'); row.className = 'cart-item';
+    row.innerHTML = `<div style="flex:1"><strong>${ci.name}</strong><div style="font-size:12px;color:#666">${ci.qty} × ${formatMoney(ci.price)}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div>${formatMoney(ci.price*ci.qty)}</div>
+        <div class="actions">
+          <button class="btn btn-sm" data-minus="${ci.id}">-</button>
+          <button class="btn btn-sm" data-plus="${ci.id}">+</button>
+          <button class="btn btn-sm btn-danger" data-rm="${ci.id}">x</button>
+        </div>
+      </div>`;
+    el.appendChild(row);
+    total += ci.qty * ci.price;
+  });
+  q('#cartTotal').textContent = formatMoney(total);
+  qa('[data-plus]').forEach(b=> b.addEventListener('click', ()=> { changeCartQty(b.dataset.plus, 1); }));
+  qa('[data-minus]').forEach(b=> b.addEventListener('click', ()=> { changeCartQty(b.dataset.minus, -1); }));
+  qa('[data-rm]').forEach(b=> b.addEventListener('click', ()=> { removeCartItem(b.dataset.rm); }));
+}
+function changeCartQty(id, delta){
+  const prod = getProducts().find(p=>p.id===id);
+  const item = cart.find(c=>c.id===id);
+  if(!item) return;
+  const newQty = item.qty + delta;
+  if(newQty <= 0){ cart = cart.filter(c=>c.id!==id); renderCart(); return; }
+  if(newQty > prod.qty) return alert('Insufficient stock');
+  item.qty = newQty; renderCart();
+}
+function removeCartItem(id){ cart = cart.filter(c=>c.id!==id); renderCart(); }
+
+q('#checkoutBtn').addEventListener('click', ()=>{
+  const session = getSession();
+  if(!session || session.type !== 'customer') return alert('Please login as customer to place orders');
+  if(cart.length === 0) return alert('Cart empty');
+  const note = q('#orderNote').value.trim();
+  // create order with status Pending
+  const orders = getOrders();
+  const orderId = 'ORD-' + String(orders.length+1).padStart(4,'0');
+  const amount = cart.reduce((s,i)=> s + i.qty * i.price, 0);
+  const order = {
+    id: orderId,
+    customerId: session.id,
+    customerUsername: session.username,
+    customerName: session.name,
+    date: new Date().toISOString(),
+    items: cart.map(x=>({ id:x.id, name:x.name, qty:x.qty, price:x.price })),
+    amount,
+    status: 'Pending',
+    note
+  };
+  orders.unshift(order);
+  saveOrders(orders);
+  cart = []; renderCart(); renderMyOrders(); renderOrders(); updateDashboard(); updateCharts();
+  // notify admin via messages array (admin sees messages in admin panel)
+  const messages = getMessages();
+  messages.unshift({ id: uid('MSG'), toUsername: 'admin', subject: 'New Order: ' + orderId, body: `New order ${orderId} by ${order.customerName} (${order.customerUsername}).`, date:new Date().toISOString() });
+  saveMessages(messages);
+  alert('Order placed and pending admin approval. Order ID: ' + orderId);
+});
+
+/* -------------------------
+   My Orders & Messages (Customer)
+   ------------------------- */
+function renderMyOrders(){
+  const session = getSession();
+  if(!session || session.type !== 'customer') return;
+  const tbody = q('#myOrdersTbody'); tbody.innerHTML = '';
+  const orders = getOrders().filter(o => o.customerUsername === session.username);
+  orders.forEach(o=>{
+    const statusLabel = o.status === 'Pending' ? `<span class="badge badge-pending">Pending</span>`
+                      : o.status === 'Approved' ? `<span class="badge badge-approved">Approved</span>`
+                      : `<span class="badge badge-cancel">Cancelled</span>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${o.id}</td><td>${new Date(o.date).toLocaleString()}</td><td>${o.items.map(it=> `${it.name}×${it.qty}`).join(', ')}</td><td>${formatMoney(o.amount)}</td><td>${statusLabel}</td><td>${getLatestMessageForOrder(o.id) || ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function getLatestMessageForOrder(orderId){
+  const msgs = getMessages().filter(m => m.body && m.body.includes(orderId));
+  if(msgs.length === 0) return '';
+  return msgs[0].body;
+}
+
+function renderMyMessages(){
+  const session = getSession();
+  if(!session || session.type !== 'customer') return;
+  const tbody = q('#myMessagesTbody'); tbody.innerHTML = '';
+  const msgs = getMessages().filter(m => m.toUsername === session.username);
+  msgs.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>Admin</td><td>${m.subject}</td><td>${m.body}</td><td>${new Date(m.date).toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* -------------------------
+   Dashboard & Charts
+   ------------------------- */
+function updateDashboard(){
+  const orders = getOrders();
+  q('#statOrders').textContent = orders.length;
+  q('#statPending').textContent = orders.filter(o=>o.status==='Pending').length;
+  q('#statCustomers').textContent = getUsers().filter(u=>u.type==='customer').length;
+  q('#statLowStock').textContent = getProducts().filter(p=>p.qty <= 5).length;
+  renderOrders(); renderRecentOrdersAdmin();
+}
+
+function renderRecentOrdersAdmin(){
+  // not a separate UI element here; admin uses orders page
+}
+
+/* Charts */
+let salesChart=null, topProductsChart=null, salesByDateChart=null, topSellingChart=null;
+function updateCharts(){
+  // Sales overview (last 10 orders)
+  const orders = getOrders().slice().reverse();
+  const last = orders.slice(-10);
+  const labels = last.map(o => new Date(o.date).toLocaleDateString());
+  const data = last.map(o => o.amount);
+
+  if(salesChart){ salesChart.data.labels = labels; salesChart.data.datasets[0].data = data; salesChart.update(); }
+  else {
+    const ctx = q('#salesChart');
+    salesChart = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:'Sales', data, tension:0.3 }] }, options:{responsive:true,plugins:{legend:{display:false}}}});
+  }
+
+  // top products
+  const prodSales = {};
+  getOrders().forEach(o => o.items.forEach(it => { prodSales[it.name] = (prodSales[it.name]||0) + it.qty; }));
+  const names = Object.keys(prodSales).slice(0,6);
+  const vals = names.map(n=>prodSales[n]||0);
+  if(topProductsChart){ topProductsChart.data.labels = names; topProductsChart.data.datasets[0].data = vals; topProductsChart.update(); }
+  else { const ctx2 = q('#topProductsChart'); topProductsChart = new Chart(ctx2, { type:'bar', data:{ labels:names, datasets:[{ label:'Qty', data:vals }] }, options:{responsive:true,plugins:{legend:{display:false}}}}); }
+
+  // reports charts (sales by date)
+  const byDate = {};
+  getOrders().forEach(o => { const d = o.date.slice(0,10); byDate[d] = (byDate[d]||0) + o.amount; });
+  const byDateLabels = Object.keys(byDate).sort();
+  const byDateVals = byDateLabels.map(d => byDate[d]);
+  if(salesByDateChart){ salesByDateChart.data.labels = byDateLabels; salesByDateChart.data.datasets[0].data = byDateVals; salesByDateChart.update(); }
+  else { const ctx3 = q('#salesByDateChart'); salesByDateChart = new Chart(ctx3, { type:'line', data:{ labels:byDateLabels, datasets:[{ label:'Sales', data:byDateVals, tension:0.3 }] }, options:{responsive:true,plugins:{legend:{display:false}}}}); }
+
+  if(topSellingChart){ topSellingChart.data.labels = names; topSellingChart.data.datasets[0].data = vals; topSellingChart.update(); }
+  else { const ctx4 = q('#topSellingChart'); topSellingChart = new Chart(ctx4, { type:'bar', data:{ labels:names, datasets:[{ label:'Qty Sold', data:vals }] }, options:{responsive:true,plugins:{legend:{display:false}}}}); }
+}
+
+/* -------------------------
+   Helpers & initApp
+   ------------------------- */
+function initApp(){
+  renderProductsList(); renderProductsGrid(); renderCustomerList(); renderOrders(); populateMsgCustomerSelect(); renderAllMessages();
+  renderMyOrders(); renderMyMessages(); renderOrders(); updateDashboard(); updateCharts();
+}
+
+/* search / refresh */
+q('#refreshOrdersBtn').addEventListener('click', ()=> renderOrders());
+
+/* reset data */
+q('#resetDataBtn').addEventListener('click', ()=>{
+  if(!confirm('Reset demo data? This will clear ALL local data.')) return;
+  localStorage.clear(); ensureInitialData(); location.reload();
+});
+
+/* display recent orders (dashboard small) */
+function renderRecentOrders(){
+  // not used separately here
+}
+
+/* populate admin message/select initially */
+populateMsgCustomerSelect();
+
+/* initial page load: if session exists, enter app */
+if(getSession()){ enterApp(); } else {
+  q('#loginScreen').style.display = ''; q('#mainApp').style.display = 'none';
+}
+
+/* expose for debug */
+window.__pbs_v2 = { getUsers, getProducts, getOrders, getMessages };
+</script>
+</body>
+</html>
